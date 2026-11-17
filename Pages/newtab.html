@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New tab</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+#wall{position:fixed;inset:-24px;z-index:0;background:#14151a;transform:translateZ(0)}
+#dim{position:fixed;inset:0;z-index:1;background:#000;opacity:.25}
+main{position:relative;z-index:2;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 80px;gap:26px}
+#clock{font-size:76px;font-weight:200;letter-spacing:-2px;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.35);line-height:1}
+#date{color:rgba(255,255,255,.85);margin-top:-14px;text-shadow:0 1px 8px rgba(0,0,0,.4)}
+form{width:min(620px,100%)}
+#q{width:100%;padding:15px 24px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:17px;box-shadow:var(--shadow);backdrop-filter:blur(14px)}
+#q::placeholder{color:var(--dim)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,96px);gap:14px;justify-content:center;width:min(720px,100%)}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px 10px;border-radius:18px;background:var(--panel);border:1px solid var(--line);color:var(--text);text-decoration:none;box-shadow:var(--shadow);backdrop-filter:blur(14px);cursor:pointer}
+.tile:hover{border-color:var(--accent)}
+.ico{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:20px;color:var(--accent-fg);background:var(--accent)}
+.nm{font-size:12.5px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:13px;line-height:22px;padding:0;display:none}
+body.edit .x{display:block}
+#bar{position:fixed;z-index:3;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;padding:8px 10px 8px 18px;border-radius:999px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:var(--shadow);font-size:13.5px;max-width:calc(100% - 24px)}
+#bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar b{color:var(--accent)}
+#bar button{padding:6px 12px;border-radius:999px;font-size:13px}
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--panel-solid);color:var(--text);padding:20px;width:min(380px,92vw);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog label{display:block;margin:10px 0 4px;color:var(--dim);font-size:13px}
+dialog input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<div id="wall"></div><div id="dim"></div>
+<main>
+  <div><div id="clock">--:--</div></div>
+  <div id="date"></div>
+  <form id="f" autocomplete="off"><input id="q" type="text" placeholder="Search or type an address" aria-label="Search or type an address" autofocus></form>
+  <div id="grid" role="list"></div>
+</main>
+<div id="bar">
+  <span><b id="count">0</b> ads &amp; trackers blocked</span>
+  <button class="btn" id="edit" type="button">Edit shortcuts</button>
+  <button class="btn primary" id="set" type="button">Settings</button>
+</div>
+<dialog id="dlg">
+  <form method="dialog" id="df">
+    <h3 style="margin:0 0 4px">Add shortcut</h3>
+    <label for="dn">Name</label><input id="dn" maxlength="30">
+    <label for="du">Web address</label><input id="du" placeholder="example.com">
+    <div class="row"><button class="btn" type="button" id="dc">Cancel</button><button class="btn primary" type="submit">Add</button></div>
+  </form>
+</dialog>
+<script src="shared.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  function tick(){
+    var d = new Date();
+    $('clock').textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    $('date').textContent = d.toLocaleDateString([], {weekday:'long', day:'numeric', month:'long'});
+  }
+  tick(); setInterval(tick, 20000);
+
+  function render(s){
+    $('wall').style.background = Atlas.wallpaperCss(s);
+    $('wall').style.filter = s.blur ? 'blur(' + s.blur + 'px)' : 'none';
+    $('dim').style.opacity = (s.dim / 100).toFixed(2);
+    $('count').textContent = Number(s.blocked).toLocaleString();
+    var g = $('grid'); g.textContent = '';
+    s.shortcuts.forEach(function(sc, i){
+      var a = document.createElement('a');
+      a.className = 'tile'; a.href = sc.url; a.setAttribute('role','listitem');
+      var ico = document.createElement('div'); ico.className = 'ico';
+      ico.textContent = (sc.name || '?').trim().charAt(0).toUpperCase() || '?';
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = sc.name; nm.title = sc.url;
+      var x = document.createElement('button'); x.className = 'x'; x.type = 'button'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Remove ' + sc.name);
+      x.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); Atlas.send('delshortcut|' + i); });
+      a.appendChild(ico); a.appendChild(nm); a.appendChild(x);
+      g.appendChild(a);
+    });
+    var add = document.createElement('button');
+    add.className = 'tile'; add.type = 'button';
+    var plus = document.createElement('div'); plus.className = 'ico'; plus.textContent = '+';
+    plus.style.background = 'transparent'; plus.style.border = '2px dashed var(--dim)'; plus.style.color = 'var(--dim)';
+    var an = document.createElement('div'); an.className = 'nm'; an.textContent = 'Add';
+    add.appendChild(plus); add.appendChild(an);
+    add.addEventListener('click', function(){ $('dn').value = ''; $('du').value = ''; $('dlg').showModal(); $('dn').focus(); });
+    g.appendChild(add);
+  }
+  Atlas.onState(render);
+
+  $('f').addEventListener('submit', function(e){
+    e.preventDefault();
+    var v = $('q').value.trim();
+    if (v) Atlas.send('go|' + v);
+  });
+  $('edit').addEventListener('click', function(){
+    document.body.classList.toggle('edit');
+    $('edit').textContent = document.body.classList.contains('edit') ? 'Done' : 'Edit shortcuts';
+  });
+  $('set').addEventListener('click', function(){ Atlas.send('go|atlas://settings'); });
+  $('dc').addEventListener('click', function(){ $('dlg').close(); });
+  $('df').addEventListener('submit', function(e){
+    e.preventDefault();
+    var n = $('dn').value.replace(/\|/g, ' ').trim(), u = $('du').value.replace(/\|/g, '').trim();
+    if (u) Atlas.send('addshortcut|' + n + '|' + u);
+    $('dlg').close();
+  });
+})();
+</script>
+</body>
+</html>

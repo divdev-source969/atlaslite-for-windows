@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body{display:flex;justify-content:center;padding:32px 16px 60px}
+.wrap{width:min(760px,100%)}
+h1{font-size:28px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--dim);margin:0 0 24px}
+section{background:var(--panel-solid);border:1px solid var(--line);border-radius:20px;padding:6px 22px 18px;margin-bottom:18px;box-shadow:var(--shadow)}
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:18px 0 6px;font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.t b{display:block;font-weight:600}
+.row .t small{color:var(--dim)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+select,input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.walls{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;padding:10px 0}
+.wp{height:70px;border-radius:14px;border:2px solid transparent;position:relative;cursor:pointer;padding:0;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.wp span{position:absolute;left:8px;bottom:6px;font-size:12px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.wp[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;padding:0}
+.sw[aria-pressed=true]{border-color:var(--text)}
+input[type=range]{accent-color:var(--accent);width:180px}
+.val{display:inline-block;width:34px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.note{color:var(--dim);font-size:13px;padding-top:6px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Settings</h1>
+  <p class="sub">Changes are saved automatically.</p>
+
+  <section aria-labelledby="h-look">
+    <h2 id="h-look">Appearance</h2>
+    <div class="row"><div class="t"><b>Dark mode</b><small>Window, menus and web pages that support it</small></div>
+      <label class="switch"><input type="checkbox" id="dark" aria-label="Dark mode"><span class="track"></span></label></div>
+    <div class="row"><div class="t"><b>Accent colour</b></div><div class="swatches" id="accents"></div></div>
+    <div class="t" style="padding-top:12px"><b>Wallpaper</b><small>Shown on the new-tab page</small></div>
+    <div class="walls" id="walls"></div>
+    <div class="btns"><button class="btn primary" id="pick" type="button">Choose your own image&hellip;</button><button class="btn" id="unpick" type="button">Remove my image</button></div>
+    <div class="row"><div class="t"><b>Wallpaper dimming</b></div><div><input type="range" id="dim" min="0" max="80" aria-label="Wallpaper dimming"> <span class="val" id="dimv"></span></div></div>
+    <div class="row"><div class="t"><b>Wallpaper blur</b></div><div><input type="range" id="blur" min="0" max="20" aria-label="Wallpaper blur"> <span class="val" id="blurv"></span></div></div>
+  </section>
+
+  <section aria-labelledby="h-priv">
+    <h2 id="h-priv">Privacy &amp; ad blocker</h2>
+    <div class="row"><div class="t"><b>Block ads and trackers</b><small><span id="cnt">0</span> blocked so far</small></div>
+      <label class="switch"><input type="checkbox" id="adblock" aria-label="Block ads and trackers"><span class="track"></span></label></div>
+    <div class="row"><div class="t"><b>Your own rules</b><small>One per line: a domain, <code>||domain^</code>, a URL part, or <code>@@domain</code> to allow</small></div>
+      <div class="btns"><button class="btn" id="editbl" type="button">Edit list</button><button class="btn" id="reloadbl" type="button">Apply changes</button></div></div>
+    <div class="row"><div class="t"><b>Counter &amp; data</b></div>
+      <div class="btns"><button class="btn" id="resetc" type="button">Reset counter</button><button class="btn danger" id="clear" type="button">Clear browsing data</button></div></div>
+  </section>
+
+  <section aria-labelledby="h-search">
+    <h2 id="h-search">Search</h2>
+    <div class="row"><div class="t"><b>Search engine</b><small>Used when you type words in the address bar</small></div><select id="search" aria-label="Search engine"></select></div>
+  </section>
+
+  <section aria-labelledby="h-perf">
+    <h2 id="h-perf">Performance</h2>
+    <div class="row"><div class="t"><b>Low-memory mode</b><small>Freezes tabs you have not used for 90 seconds. Also uses Chromium&rsquo;s low-memory engine mode (applies after restart).</small></div>
+      <label class="switch"><input type="checkbox" id="ramSaver" aria-label="Low-memory mode"><span class="track"></span></label></div>
+    <div class="row"><div class="t"><b>Force dark on every site</b><small>Darkens pages that have no dark theme. May change some colours (applies after restart).</small></div>
+      <label class="switch"><input type="checkbox" id="forceDark" aria-label="Force dark on every site"><span class="track"></span></label></div>
+  </section>
+
+  <p class="note">AtlasLite <span id="ver"></span> &middot; web pages are rendered by Microsoft Edge WebView2 (Chromium), so HTML, CSS and JavaScript work like in Edge.</p>
+</div>
+<script src="shared.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var ACCENTS = ['#7c9cff','#4cc9f0','#43d9ad','#b5e048','#ffb703','#ff7b54','#ff5d8f','#c77dff'];
+  var built = false;
+
+  function set(k, v){ Atlas.send('set|' + k + '|' + v); }
+
+  function build(s){
+    var w = $('walls');
+    Object.keys(Atlas.WALLPAPERS).forEach(function(id){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'wp'; b.dataset.id = id;
+      b.style.background = Atlas.WALLPAPERS[id][1];
+      var sp = document.createElement('span'); sp.textContent = Atlas.WALLPAPERS[id][0]; b.appendChild(sp);
+      b.addEventListener('click', function(){ set('wallpaper', id); });
+      w.appendChild(b);
+    });
+    var cu = document.createElement('button');
+    cu.type = 'button'; cu.className = 'wp'; cu.dataset.id = 'custom'; cu.id = 'customtile';
+    var cs = document.createElement('span'); cs.textContent = 'My image'; cu.appendChild(cs);
+    cu.addEventListener('click', function(){ if (Atlas.state && Atlas.state.customWallpaper) set('wallpaper', 'custom'); else Atlas.send('pickwall'); });
+    w.appendChild(cu);
+
+    var a = $('accents');
+    ACCENTS.forEach(function(c){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'sw'; b.dataset.c = c; b.style.background = c;
+      b.setAttribute('aria-label', 'Accent ' + c);
+      b.addEventListener('click', function(){ set('accent', c); });
+      a.appendChild(b);
+    });
+    s.engines.forEach(function(e){
+      var o = document.createElement('option'); o.value = e.id; o.textContent = e.name; $('search').appendChild(o);
+    });
+    $('search').addEventListener('change', function(){ set('search', this.value); });
+    ['dark','adblock','ramSaver','forceDark'].forEach(function(k){
+      $(k).addEventListener('change', function(){ set(k, this.checked ? '1' : '0'); });
+    });
+    [['dim','dimv'],['blur','blurv']].forEach(function(p){
+      var el = $(p[0]);
+      el.addEventListener('input', function(){ $(p[1]).textContent = el.value; });
+      el.addEventListener('change', function(){ set(p[0], el.value); });
+    });
+    $('pick').addEventListener('click', function(){ Atlas.send('pickwall'); });
+    $('unpick').addEventListener('click', function(){ Atlas.send('clearwall'); });
+    $('editbl').addEventListener('click', function(){ Atlas.send('editblocklist'); });
+    $('reloadbl').addEventListener('click', function(){ Atlas.send('reloadblocklist'); });
+    $('resetc').addEventListener('click', function(){ Atlas.send('resetblocked'); });
+    $('clear').addEventListener('click', function(){ Atlas.send('clear'); });
+    built = true;
+  }
+
+  function render(s){
+    if (!built) build(s);
+    $('dark').checked = !!s.dark;
+    $('adblock').checked = !!s.adblock;
+    $('ramSaver').checked = !!s.ramSaver;
+    $('forceDark').checked = !!s.forceDark;
+    $('search').value = s.search;
+    $('dim').value = s.dim; $('dimv').textContent = s.dim;
+    $('blur').value = s.blur; $('blurv').textContent = s.blur;
+    $('cnt').textContent = Number(s.blocked).toLocaleString();
+    $('ver').textContent = 'v' + s.version;
+    Array.prototype.forEach.call(document.querySelectorAll('.wp'), function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.id === s.wallpaper));
+    });
+    var ct = $('customtile');
+    ct.style.background = s.customWallpaper ? 'url("' + s.customWallpaper + '") center/cover' : 'var(--bg)';
+    $('unpick').disabled = !s.customWallpaper;
+    Array.prototype.forEach.call(document.querySelectorAll('.sw'), function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.c === s.accent));
+    });
+  }
+  Atlas.onState(render);
+})();
+</script>
+</body>
+</html>

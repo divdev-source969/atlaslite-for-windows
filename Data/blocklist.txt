@@ -1,0 +1,49 @@
+# AtlasLight starter blocklist. Add your own lines in ~/.config/atlaslight/blocklist.txt
+# Formats: domain | 0.0.0.0 domain | ||domain^ | any/url/substring | @@domain (allow)
+# You can append a big hosts-format list (for example StevenBlack's "hosts") to your own file.
+
+# Google ads / analytics
+doubleclick.net
+googlesyndication.com
+googleadservices.com
+google-analytics.com
+googletagmanager.com
+googletagservices.com
+adservice.google.com
+2mdn.net
+
+# Ad networks and exchanges
+adnxs.com
+adsrvr.org
+advertising.com
+amazon-adsystem.com
+casalemedia.com
+criteo.com
+criteo.net
+openx.net
+outbrain.com
+pubmatic.com
+rubiconproject.com
+smartadserver.com
+taboola.com
+teads.tv
+yieldmo.com
+media.net
+ads.yahoo.com
+adform.net
+
+# Trackers / measurement
+scorecardresearch.com
+quantserve.com
+moatads.com
+hotjar.com
+mixpanel.com
+segment.io
+chartbeat.com
+newrelic.com
+branch.io
+
+# Common ad URL patterns
+/ads/banner
+/adserver/
+/pagead/
