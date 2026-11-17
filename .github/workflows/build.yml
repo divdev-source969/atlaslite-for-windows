@@ -1,0 +1,40 @@
+name: Build AtlasLite for Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out AtlasLite
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run ad-block tests
+        run: dotnet run --project tests/AtlasLite.Tests/AtlasLite.Tests.csproj -c Release
+
+      - name: Build AtlasLite (x86, Release)
+        run: dotnet build AtlasLite.csproj -c Release -o out/AtlasLite
+
+      - name: Check the output
+        shell: pwsh
+        run: |
+          Get-ChildItem out/AtlasLite -Recurse | Select-Object -First 80 FullName, Length | Format-Table -AutoSize
+          if (-not (Test-Path out/AtlasLite/AtlasLite.exe)) { throw "AtlasLite.exe was not produced" }
+          if (-not (Test-Path out/AtlasLite/Pages/newtab.html)) { throw "Pages folder missing" }
+          if (-not (Test-Path out/AtlasLite/Data/blocklist.txt)) { throw "Blocklist missing" }
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AtlasLite-windows
+          path: out/AtlasLite/
+          if-no-files-found: error
